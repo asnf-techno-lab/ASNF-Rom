@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ASNF ROM Vault | X6880 Hub</title>
+    <style>
+        /* ==========================================
+           ASNF ROM VAULT - X6880 REPOSITORY (MAJOR UPGRADE)
+           Architect: M. Nabil Irza Prawira
+           Company: ASNF Techno Lab
+           Engine: Shinko Engine 15 (Ultra Core Default)
+           ========================================== */
+        
+        :root {
+            /* SHINKO LIQUID CRYSTAL ENGINE 5.0 */
+            --glass-blur-value: 160px;
+            --glass-blur: blur(var(--glass-blur-value)) saturate(350%);
+            --crystal-bg: rgba(255, 255, 255, 0.03);
+            --crystal-border: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.02) 100%);
+            --crystal-shadow: 0 15px 40px 0 rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.05);
+            
+            --ios-radius: 28px; 
+            --btn-radius: 40px; 
+            
+            /* Upgraded Physics-Based Animations */
+            --spring-physics: cubic-bezier(0.4, 1.2, 0.4, 1);
+            --smooth-flow: cubic-bezier(0.25, 1, 0.5, 1);
+            --transition: all 0.5s var(--smooth-flow);
+            
+            /* Theming */
+            --bg-base: #030303;
+            --text-main: #ffffff;
+            --text-sub: rgba(235, 235, 245, 0.65);
+            --accent: #0a84ff;
+            --accent-glow: rgba(10, 132, 255, 0.5);
+            
+            /* ROM Badges */
+            --xiaomi: #ff6900;
+            --aosp: #32d74b;
+            --oppo: #bf5af2;
+            --moto: #5ac8fa;
+            --transsion: #ffd60a;
+            --oneplus: #eb0029;
+            --recovery: #ff9500;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            font-size: clamp(14px, 1.3vw, 16px); 
+            scrollbar-width: none; 
+        }
+        body::-webkit-scrollbar { display: none; } 
+
+        /* DYNAMIC LERP MESH PARALLAX */
+        .mesh-bg {
+            position: fixed; top: -50%; left: -50%; width: 200%; height: 200%; z-index: -1;
+            background-image: 
+                radial-gradient(at 20% 20%, rgba(10, 132, 255, 0.15) 0px, transparent 40%),
+                radial-gradient(at 80% 30%, rgba(191, 90, 242, 0.15) 0px, transparent 40%),
+                radial-gradient(at 90% 80%, rgba(255, 105, 0, 0.1) 0px, transparent 40%),
+                radial-gradient(at 20% 90%, rgba(255, 214, 10, 0.1) 0px, transparent 40%);
+            animation: meshFlow 35s ease-in-out infinite alternate;
+            will-change: transform, background-position;
+        }
+
+        @keyframes meshFlow { 0% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } 100% { background-position: 0% 0%; } }
+
+        /* LOADING SCREEN */
+        #loading-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 1.2s var(--smooth-flow), visibility 1.2s; will-change: opacity, visibility;
+        }
+        .load-title { font-size: 40px; font-weight: 900; letter-spacing: -2px; color: #fff; animation: popUp 1s var(--spring-physics) forwards; opacity: 0; transform: translateY(20px);}
+        .load-sub { font-size: 14px; font-weight: 700; color: var(--accent); letter-spacing: 5px; text-transform: uppercase; margin-top: 10px; opacity: 0; animation: popUp 1s var(--spring-physics) 0.3s forwards;}
+        @keyframes popUp { to { opacity: 1; transform: translateY(0); } }
+
+        /* LAYOUT & TAB SYSTEM */
+        .app-layout { max-width: 1100px; margin: 0 auto; padding: clamp(20px, 5vw, 40px); padding-bottom: 140px; box-sizing: border-box; }
+        .tab-section { display: none; opacity: 0; transform: scale(0.96) translateY(30px) translate3d(0,0,0); transition: var(--transition); will-change: opacity, transform, filter; }
+        .tab-section.active { display: block; opacity: 1; transform: scale(1) translateY(0) translate3d(0,0,0); animation: smoothEntry 0.8s var(--spring-physics) forwards; }
+        @keyframes smoothEntry { 0% { opacity: 0; transform: translateY(40px) scale(0.95); filter: blur(15px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+
+        /* HEADER */
+        .hero-header { text-align: center; margin-bottom: 50px; margin-top: 20px; }
+        .hero-title { font-size: clamp(35px, 6vw, 60px); font-weight: 900; letter-spacing: -2px; margin: 0; background: linear-gradient(to right, #fff, rgba(255,255,255,0.6)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero-subtitle { font-size: clamp(14px, 2vw, 16px); color: var(--text-sub); font-weight: 600; letter-spacing: 3px; text-transform: uppercase; margin-top: 10px; }
+
+        /* CRYSTAL GLASS CARD DEFAULT */
+        .glass-card {
+            background: var(--crystal-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+            border-radius: var(--ios-radius); padding: 30px; 
+            box-shadow: var(--crystal-shadow); color: #fff; position: relative; overflow: hidden;
+            transition: transform 0.6s var(--spring-physics), box-shadow 0.6s var(--smooth-flow);
+            display: flex; flex-direction: column; will-change: transform;
+        }
+        .glass-card::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: var(--ios-radius); padding: 1px; background: var(--crystal-border);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
+        }
+        .glass-card:hover { transform: scale(1.02) translateY(-10px) translate3d(0,0,0); box-shadow: 0 25px 50px rgba(0,0,0,0.6), inset 0 0 20px rgba(255,255,255,0.1); z-index: 10;}
+
+        /* BADGES */
+        .badge { padding: 6px 14px; border-radius: 12px; font-size: 11px; font-weight: 800; margin-bottom: 15px; display: inline-flex; letter-spacing: 1px; text-transform: uppercase; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
+        .b-xiaomi { background: rgba(255, 105, 0, 0.15); color: var(--xiaomi); border-color: rgba(255, 105, 0, 0.3);}
+        .b-aosp { background: rgba(50, 215, 75, 0.15); color: var(--aosp); border-color: rgba(50, 215, 75, 0.3);}
+        .b-oppo { background: rgba(191, 90, 242, 0.15); color: var(--oppo); border-color: rgba(191, 90, 242, 0.3);}
+        .b-moto { background: rgba(90, 200, 250, 0.15); color: var(--moto); border-color: rgba(90, 200, 250, 0.3);}
+        .b-transsion { background: rgba(255, 214, 10, 0.15); color: var(--transsion); border-color: rgba(255, 214, 10, 0.3);}
+        .b-oneplus { background: rgba(235, 0, 41, 0.15); color: var(--oneplus); border-color: rgba(235, 0, 41, 0.3);}
+        .b-recovery { background: rgba(255, 149, 0, 0.15); color: var(--recovery); border-color: rgba(255, 149, 0, 0.3);}
+
+        /* BUTTONS */
+        .btn-glass {
+            display: inline-flex; justify-content: center; align-items: center; text-decoration: none; box-sizing: border-box; text-align: center;
+            background: rgba(255,255,255,0.05); color: #fff; gap: 10px;
+            padding: 16px 25px; border-radius: var(--btn-radius); font-weight: 800; font-size: 13px; letter-spacing: 1px; 
+            transition: transform 0.5s var(--spring-physics), background 0.4s, box-shadow 0.4s; border: 1px solid rgba(255,255,255,0.15);
+            position: relative; overflow: hidden; transform: translateZ(0); cursor: pointer; width: 100%; will-change: transform;
+        }
+        .btn-glass:hover { background: #fff; color: #000; transform: scale(1.03) translateY(-3px) translate3d(0,0,0); box-shadow: 0 15px 35px rgba(255,255,255,0.3); }
+        .btn-primary { background: var(--text-main); color: #000; border: none; box-shadow: 0 10px 30px rgba(255,255,255,0.2); }
+        .btn-primary:hover { background: var(--accent); color: #fff; box-shadow: 0 15px 40px var(--accent-glow);}
+        
+        .btn-group { display: flex; gap: 10px; margin-top: auto; padding-top: 20px;}
+
+        /* DOCK NAV */
+        .shinko-dock {
+            position: fixed; bottom: clamp(20px, 4vw, 35px); left: 50%; transform: translateX(-50%) translate3d(0,0,0);
+            background: rgba(10, 10, 10, 0.5); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+            border-radius: 50px; display: flex; gap: 6px; padding: 12px 25px; 
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.15);
+            z-index: 900; transition: width 0.5s var(--spring-physics); will-change: transform, width, padding;
+        }
+        .shinko-dock::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 50px; padding: 1px; background: var(--crystal-border);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
+        }
+
+        .dock-item {
+            width: clamp(55px, 12vw, 65px); height: clamp(55px, 12vw, 65px); border-radius: 22px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: var(--text-sub); cursor: pointer; position: relative;
+            transition: transform 0.6s var(--spring-physics), background 0.3s, box-shadow 0.4s; will-change: transform;
+        }
+        .dock-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+        .dock-item.active { background: rgba(255,255,255,0.12); color: #fff; transform: scale(1.15) translate3d(0, -15px, 0); box-shadow: 0 15px 35px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.1); }
+        .dock-icon { font-size: clamp(22px, 5vw, 26px); margin-bottom: 2px; transition: var(--transition); will-change: transform; }
+        .dock-item.active .dock-icon { transform: scale(1.1) translate3d(0,0,0); filter: drop-shadow(0 0 15px rgba(255,255,255,0.5));}
+        .dock-text { font-size: 10px; font-weight: 800; opacity: 0; transform: translateY(15px) translate3d(0,0,0); transition: var(--transition); position: absolute; bottom: -22px; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;}
+        .dock-item.active .dock-text { opacity: 1; transform: translateY(0) translate3d(0,0,0); }
+
+        /* GRID SYSTEM */
+        .rom-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; }
+
+        /* CRYSTAL MODAL */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            z-index: 10000; display: flex; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: var(--transition);
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-box {
+            background: rgba(20,20,20,0.8); border-radius: 32px; width: 90%; max-width: 600px; max-height: 85vh;
+            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 40px 80px rgba(0,0,0,0.8), inset 0 0 30px rgba(255,255,255,0.05);
+            transform: scale(0.9) translateY(30px); transition: transform 0.6s var(--spring-physics);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .modal-overlay.active .modal-box { transform: scale(1) translateY(0); }
+        .modal-header { padding: 25px 30px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3);}
+        .modal-title { font-size: 22px; font-weight: 900; margin: 0; color: #fff; }
+        .modal-close { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 35px; height: 35px; border-radius: 50%; font-size: 16px; cursor: pointer; transition: var(--transition); }
+        .modal-close:hover { background: var(--accent); transform: scale(1.1); }
+        .modal-body { padding: 30px; overflow-y: auto; scrollbar-width: none; font-size: 14.5px; line-height: 1.7; color: var(--text-sub); }
+        .modal-body::-webkit-scrollbar { display: none; }
+        
+        .modal-body h4 { color: #fff; margin: 20px 0 10px; font-size: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;}
+        .modal-body h4:first-child { margin-top: 0; }
+        .modal-body ul { margin: 0; padding-left: 20px; }
+        .modal-body li { margin-bottom: 5px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="mesh-bg" id="meshBg"></div>
+
+    <div id="loading-screen">
+        <div class="load-title">ASNF Vault</div>
+        <div class="load-sub">X6880 Repository</div>
+    </div>
+
+    <nav class="shinko-dock">
+        <div class="dock-item active" onclick="switchMenu('home', this)">
+            <div class="dock-icon">🏠</div><div class="dock-text">Hub</div>
+        </div>
+        <div class="dock-item" onclick="switchMenu('roms', this)">
+            <div class="dock-icon">📦</div><div class="dock-text">ROMs</div>
+        </div>
+        <div class="dock-item" onclick="switchMenu('guide', this)">
+            <div class="dock-icon">📖</div><div class="dock-text">Guide</div>
+        </div>
+    </nav>
+
+    <div class="app-layout">
+        
+        <div id="menu-home" class="tab-section active">
+            <header class="hero-header">
+                <h1 class="hero-title">ASNF ROM Vault</h1>
+                <p class="hero-subtitle">Infinix Hot 50 Pro Plus (X6880)</p>
+            </header>
+
+            <div class="glass-card" style="text-align: center; border-bottom: 4px solid var(--accent);">
+                <h2 style="margin-top:0; font-size: 28px;">Welcome to The Ground Zero</h2>
+                <p style="color: var(--text-sub); line-height: 1.8; font-size: 16px;">
+                    Ini adalah repositori pusat untuk daftar *Custom ROM* perangkat <strong>X6880</strong>. 
+                    Proyek ini dikelola oleh <strong>ASNF Techno Lab</strong>. Seluruh data, instruksi *flash*, *bug list*, dan kredit *developer/porter* tersimpan dengan aman dalam ekosistem Shinko Engine 15.
+                </p>
+                <button class="btn-glass btn-primary" style="margin-top: 20px; width: auto; padding: 18px 40px;" onclick="document.querySelectorAll('.dock-item')[1].click()">LIHAT DAFTAR ROM</button>
+            </div>
+            
+            <div class="glass-card" style="margin-top: 25px; background: rgba(0,0,0,0.4);">
+                <h3 style="margin-top: 0; color: #fff;">⚠️ Peringatan (Disclaimer)</h3>
+                <p style="color: var(--text-sub); line-height: 1.7; font-size: 14.5px; margin: 0;">
+                    *Flashing Custom ROM* membawa risiko *bootloop* atau kerusakan data. Pastikan Anda sudah mengerti cara menggunakan *Custom Recovery* dan sudah melakukan *Backup Data*. Segala risiko ditanggung oleh pengguna.
+                </p>
+            </div>
+        </div>
+
+        <div id="menu-roms" class="tab-section">
+            <header class="hero-header">
+                <h1 class="hero-title">Repository</h1>
+                <p class="hero-subtitle">Select Your Environment</p>
+            </header>
+
+            <div class="rom-grid" id="romContainer">
+                </div>
+        </div>
+
+        <div id="menu-guide" class="tab-section">
+            <header class="hero-header">
+                <h1 class="hero-title">Flash Guide</h1>
+                <p class="hero-subtitle">Standard Operating Procedure</p>
+            </header>
+
+            <div class="glass-card" style="margin-bottom: 25px;">
+                <h3 style="margin-top: 0; color: var(--aosp);">Metode Standar (.zip)</h3>
+                <p style="color: var(--text-sub); font-size: 14.5px;">Gunakan metode ini untuk ROM berbasis .zip (HyperOS 1, 2, HelloUI, dll).</p>
+                <ol style="color: var(--text-sub); line-height: 1.8; font-size: 14.5px;">
+                    <li>Reboot ke Custom Recovery.</li>
+                    <li>Flash file <code style="color:#fff;">.zip</code> ROM yang sudah di-download.</li>
+                    <li>Lakukan <strong>Format Data</strong> (Ketik "yes").</li>
+                    <li>Reboot System.</li>
+                </ol>
+            </div>
+
+            <div class="glass-card" style="margin-bottom: 25px;">
+                <h3 style="margin-top: 0; color: var(--transsion);">Metode Super.img (HIOS/XOS/RealmeUI)</h3>
+                <p style="color: var(--text-sub); font-size: 14.5px;">Untuk ROM port dari Transsion / BBK yang berbentuk ekstrak Super.img.</p>
+                <ol style="color: var(--text-sub); line-height: 1.8; font-size: 14.5px;">
+                    <li>Reboot ke Custom Recovery.</li>
+                    <li>Flash <strong style="color:#fff;">Kernel Permissiver</strong>.</li>
+                    <li>Flash <code style="color:#fff;">Super.img</code> (yang sudah diekstrak dari file .zip) ke partisi Super.</li>
+                    <li>Lakukan <strong>Format Data</strong>.</li>
+                    <li>Reboot System.</li>
+                </ol>
+                <p style="color: var(--text-sub); font-size: 13px; font-style: italic; margin-top: 10px;">*Jika Anda update dari versi sebelumnya (misal XOS 16.1 ke 16.2), Format Data opsional, cukup Flash Permissiver & Super.img.</p>
+            </div>
+
+            <div class="glass-card" style="border-color: var(--accent);">
+                <h3 style="margin-top: 0; color: var(--accent);">Informasi GKI Permissiver</h3>
+                <p style="color: var(--text-sub); font-size: 14.5px; line-height: 1.7; margin: 0;">
+                    Beberapa ROM mewajibkan status SELinux Permissive untuk bisa booting. Pastikan Anda men-*download* dan men-*flash* file Permissiver GKI yang disarankan oleh Porter sebelum *reboot*.
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="modal-overlay" id="romModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">ROM Details</h3>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. ASNF DATA BASE (ROM LIST X6880) - MAJOR UPGRADE ---
+        const romDatabase = [
+            {
+                id: "hos1", name: "HyperOS 1", badge: "b-xiaomi", badgeText: "HyperOS", dev: "Naze", base: "Redmi Note 13 5G",
+                link: "https://sourceforge.net/projects/naze-release/files/port-rom/X6880/hos1h50prop.zip/download",
+                details: `
+                    <h4>Status & Hardware</h4>
+                    <ul>
+                        <li><strong>Working:</strong> Setup, Play Store, Google Login, Brightness, SMS, Internet (Bima+ dll), Camera, Flash (Back only), Banking App (with module), Vibration, Bluetooth, Quick Share, USSD, DT2W, Face ID, MEET_BASIC_INTEGRITY.</li>
+                        <li><strong>Bugs/Not Working:</strong> Fingerprint, NFC.</li>
+                    </ul>
+                    <h4>Developer Notes</h4>
+                    <ul>
+                        <li>Ditambahkan Transsion Camera.</li>
+                        <li>Deepsleep tidak berjalan.</li>
+                        <li>Tweak untuk fix battery issue (Thanks to @goupstream).</li>
+                        <li>Brightness issue fixed (Thanks to @kaminarich).</li>
+                    </ul>
+                `
+            },
+            {
+                id: "hos2", name: "HyperOS 2", badge: "b-xiaomi", badgeText: "HyperOS", dev: "Naze | Diives", base: "Poco M6 Pro 5G",
+                link: "https://sourceforge.net/projects/naze-release/files/port-rom/X6880/hos2x6880.zip/download",
+                details: `
+                    <h4>Status & Hardware</h4>
+                    <ul>
+                        <li><strong>Working:</strong> Setup, Play Store, Google Login, Brightness, SMS, Internet, Super Debloated, Camera, Flash (Back only), Banking (with module), Vibration, Bluetooth, Quick Share, USSD, DT2W, Face ID, NFC, MEET_BASIC_INTEGRITY.</li>
+                        <li><strong>Bugs/Not Working:</strong> Fingerprint.</li>
+                    </ul>
+                    <h4>Developer Notes & Changelog</h4>
+                    <ul>
+                        <li>Added Transsion camera, system ui plugin, hyperos launcher mod, gramophone audio player.</li>
+                        <li>Ditambahkan module blur (bisa dimatikan).</li>
+                        <li>Overclocked over 10000000 GHZ (Gaming bhai).</li>
+                        <li>Set swappiness to 130, dex/dalvik prop, circle to search.</li>
+                        <li>Gunakan Quartix / Mahiru kernel untuk performa bagus.</li>
+                        <li>Flashable bisa di slot A/B. Gunakan Zeta 120hz untuk layar.</li>
+                    </ul>
+                    <h4>Credits</h4>
+                    <p>@goupstream @YENA_00 (base), @kaminarich, @llionsmods, @MiAzami, @OrcaOnSteroids, @ZTV86, dll.</p>
+                `
+            },
+            {
+                id: "hello", name: "HelloUI A15", badge: "b-moto", badgeText: "Motorola", dev: "Erik Shelby", base: "Motorola G54 5G (XOS15.1.1.121)",
+                link: "https://1024terabox.com/s/17lfohA7s_dSTuQLdUi3wfg",
+                details: `
+                    <h4>Changelogs</h4>
+                    <ul>
+                        <li>Fix Dolby & Low volume call.</li>
+                        <li>SELinux: Enforcing.</li>
+                    </ul>
+                    <h4>Bugs & Issues</h4>
+                    <ul>
+                        <li>FOD (Fingerprint on Display).</li>
+                        <li>Jika OTG tidak bisa, gunakan modul fix OTG.</li>
+                    </ul>
+                `
+            },
+            {
+                id: "hos3", name: "HyperOS 3", badge: "b-xiaomi", badgeText: "HyperOS", dev: "zerophyx", base: "Redmi K70e (Base XOS15.1.1)",
+                link: "https://pixeldrain.com/u/u4gNzJiP",
+                details: `
+                    <h4>Flash Instructions</h4>
+                    <p>Flash ROM -> Flash Permissiver GKI -> Wipe ART Cache, Dalvik Metadata -> Format Data.</p>
+                    <h4>Notes, Issues & Bugs</h4>
+                    <ul>
+                        <li>Wajib Permissive. Google services enabled by default. Indonesian language included.</li>
+                        <li>Bugs: Floating window cannot be used, Face Unlock, Fingerprint not working.</li>
+                        <li>Modded launcher & Security app. Added TranssionCamera (Pova 5 Pro 5G). Running smoothly.</li>
+                        <li>Jika layar tidak mau mati (hanya wallpaper), nyalakan AOD lalu matikan lagi.</li>
+                    </ul>
+                `
+            },
+            {
+                id: "pos16", name: "PixelOS 16", badge: "b-aosp", badgeText: "AOSP", dev: "Gabutbuild", base: "OSS Vendor",
+                link: "https://sourceforge.net/projects/gabutbuild/files/X6880/pos-16/",
+                details: `
+                    <h4>Flash Instructions (ADB Sideload)</h4>
+                    <ol>
+                        <li>Flash Vendor_boot.img via fastboot: <code>fastboot flash recovery vendor_boot.img</code></li>
+                        <li>Reboot manually ke recovery (Power + Vol Up).</li>
+                        <li>Pilih ADB Sideload: <code>adb sideload rom.zip</code></li>
+                        <li>Format data, Reboot system.</li>
+                    </ol>
+                    <h4>Changelogs</h4>
+                    <ul>
+                        <li>Initial build OSS Vendor. SELinux is Enforcing.</li>
+                        <li><strong>Fixed FOD (Fingerprint on Display)</strong>.</li>
+                        <li>Many under the hood changes and optimization.</li>
+                    </ul>
+                `
+            },
+            {
+                id: "cos15", name: "ColorOS 15", badge: "b-oppo", badgeText: "Oppo", dev: "KanaDev", base: "Oppo Reno 13F",
+                link: "https://pixeldrain.com/u/iUjkigtB",
+                details: `
+                    <h4>Flash Instructions</h4>
+                    <p>Flash ROM -> Flash Permissiver GKI -> Format Data -> Reboot.</p>
+                    <h4>Bugs List (Major)</h4>
+                    <ul>
+                        <li>FOD BUG on fod devices (always).</li>
+                        <li>Face Unlock (Gunakan PIN saja).</li>
+                        <li>Oreality Audio Enhancement.</li>
+                    </ul>
+                    <p>Sebagian besar fitur lainnya bekerja normal. Proyek gabungan KanaDev_IS, GrayRavens, AnxinityPrjkt.</p>
+                `
+            },
+            {
+                id: "cos16", name: "ColorOS 16", badge: "b-oppo", badgeText: "Oppo", dev: "zerophyx", base: "Oppo Reno 13F 4G (Base: 15.1.1)",
+                link: "https://pixeldrain.com/u/V1J3m3Ht",
+                details: `
+                    <h4>Notes & Bugs</h4>
+                    <ul>
+                        <li>Permissive by default (Tidak perlu flash Permissiver GKI).</li>
+                        <li>Bug: Face Unlock.</li>
+                        <li>Jika kamera tidak jalan, hapus aplikasi kamera lalu gunakan versi port.</li>
+                    </ul>
+                    <h4>Changelogs</h4>
+                    <ul>
+                        <li>iOS Emoji Updated to 18.4, OPPO Sans be the main Font.</li>
+                        <li>Fixed Brightness at Screen Record & Double tap to Wake.</li>
+                        <li>Added Kaorios Toolbox For Integrity, Laya BatteryMonitor, RAW in X6882.</li>
+                        <li>Optimized Blur and Some Animations. Fixed Control Center Padding.</li>
+                    </ul>
+                `
+            },
+            {
+                id: "infx36", name: "Infinity X V3.6", badge: "b-aosp", badgeText: "AOSP", dev: "KimelaZPrjkt", base: "AOSP",
+                link: "#",
+                details: `
+                    <h4>Download Links</h4>
+                    <ul>
+                        <li><a href="https://drive.usercontent.google.com/download?id=1U0nMpC18qMufyfLCG9KC6CtcleLD7kUb&export=download" target="_blank" style="color:var(--accent);">GApps Version</a></li>
+                        <li><a href="https://drive.usercontent.google.com/download?id=1XGpbEhbDbCXRi7NPcsTO5tfunsRxr-pm&export=download" target="_blank" style="color:var(--accent);">Vanilla Version</a></li>
+                    </ul>
+                    <h4>Changelogs</h4>
+                    <ul>
+                        <li>Initial build.</li>
+                        <li>Many more under the hood changes and optimization.</li>
+                    </ul>
+                `
+            },
+            {
+                id: "infx38", name: "Infinity X V3.8", badge: "b-aosp", badgeText: "AOSP", dev: "KimelaZPrjkt", base: "AOSP",
+                link: "https://gofile.io/d/8NIzxP",
+                details: `
+                    <h4>Flash Instructions</h4>
+                    <p>I Can't Find The Way (Gunakan metode standar / recovery umum).</p>
+                    <h4>Bugs</h4>
+                    <ul>
+                        <li>NFC.</li>
+                        <li>Mono Audio.</li>
+                    </ul>
+                `
+            },
+            {
+                id: "axion", name: "AxionAOSP 2.3", badge: "b-aosp", badgeText: "AOSP", dev: "KimelaZPrjkt", base: "AOSP",
+                link: "#",
+                details: `
+                    <h4>Download Links</h4>
+                    <ul>
+                        <li><a href="https://drive.usercontent.google.com/download?id=1iT7jczuLtAbPTidC4fMF6vOiD17F1ouc&export=download" target="_blank" style="color:var(--accent);">GApps Version</a></li>
+                        <li><a href="https://drive.usercontent.google.com/download?id=1WmytDAp5tPPP6yhGHG0sYU-mMM4C2shV&export=download" target="_blank" style="color:var(--accent);">Vanilla Version</a></li>
+                    </ul>
+                    <h4>Changelogs & Issues</h4>
+                    <ul>
+                        <li>Resync to latest.</li>
+                        <li><strong>Bug:</strong> Nono audio in x6880 (gip logs or gtfo).</li>
+                    </ul>
+                `
+            },
+            {
+                id: "xos161", name: "XOS 16.1", badge: "b-transsion", badgeText: "Infinix", dev: "Rama Bondan Parkoso", base: "Infinix Note Edge",
+                link: "https://sourceforge.net/projects/rama982/files/PORT/X6880-PORT-16.1.0.140SP10(OP001PF001AZ)-recovery-ab.zip",
+                details: `
+                    <h4>Status</h4>
+                    <ul>
+                        <li><strong>Working:</strong> Wifi, SIM card, Storage, FOD, NFC, Media & Ui Visual, Camera, Backlight, DT2W.</li>
+                    </ul>
+                    <h4>Notes</h4>
+                    <ul>
+                        <li>Permissive. Jangan ganti Kernel.</li>
+                        <li>Included KSU-Next and OrangeFox.</li>
+                        <li>Expect other bugs.</li>
+                    </ul>
+                `
+            },
+            {
+                id: "xos162", name: "XOS 16.2", badge: "b-transsion", badgeText: "Infinix", dev: "Dianfiit", base: "Infinix Note 50S 5G",
+                link: "https://pixeldrain.com/u/QWQw86Av",
+                details: `
+                    <h4>Notes</h4>
+                    <p>Gunakan Kernel Permissiver khusus (<a href="https://t.me/newbiehosx6880/3581" target="_blank" style="color:var(--accent);">Link Telegram</a>).</p>
+                    <h4>Changelog / Working</h4>
+                    <ul>
+                        <li>FOD (Fingerprint on Display) Works.</li>
+                        <li>Facelock Works.</li>
+                        <li>Bypass Charging Works.</li>
+                        <li>Device Certified ✓.</li>
+                    </ul>
+                `
+            },
+            {
+                id: "hios16", name: "HIOS 16", badge: "b-transsion", badgeText: "Tecno", dev: "Dianfiit", base: "Unknown",
+                link: "https://pixeldrain.com/u/iXvxkot4",
+                details: `
+                    <h4>Flash Instructions</h4>
+                    <p>Wajib menggunakan metode ekstrak Super.img.</p>
+                    <ol>
+                        <li>Reboot custom recovery.</li>
+                        <li>Flash kernel permissiver.</li>
+                        <li>Flash Super.img (diekstrak dari .zip) ke partisi super.</li>
+                        <li>Format data, Reboot system.</li>
+                    </ol>
+                `
+            },
+            {
+                id: "hios162", name: "HIOS 16.2", badge: "b-transsion", badgeText: "Tecno", dev: "Dianfiit", base: "Tecno Camon 40 5G",
+                link: "https://pixeldrain.com/u/yFBTTACz",
+                details: `
+                    <h4>Notes</h4>
+                    <p>Gunakan Kernel Permissiver khusus (<a href="https://t.me/newbiehosx6880/3581" target="_blank" style="color:var(--accent);">Link Telegram</a>).</p>
+                    <h4>Changelog / Working</h4>
+                    <ul>
+                        <li>FOD & Facelock Works.</li>
+                        <li>Sim & SD Card Works.</li>
+                        <li>Bypass Charging Works.</li>
+                        <li>Device Certified ✓.</li>
+                    </ul>
+                `
+            },
+            {
+                id: "rui7", name: "RealmeUI 7", badge: "b-oppo", badgeText: "Realme", dev: "Dianfiit", base: "Realme 15 5G",
+                link: "https://pixeldrain.com/u/eZK4zzsT",
+                details: `
+                    <h4>Flash Instructions</h4>
+                    <p>Gunakan metode ekstrak Super.img + Flash Kernel Permissiver.</p>
+                    <h4>Bugs</h4>
+                    <ul>
+                        <li>NFC.</li>
+                        <li>FOD (Fingerprint on Display).</li>
+                    </ul>
+                `
+            },
+            {
+                id: "oos15", name: "OxygenOS 15", badge: "b-oneplus", badgeText: "OnePlus", dev: "goupstream (Log: Erik Shelby)", base: "Oneplus Nord 3 5G (Base: XOS v1466)",
+                link: "https://1024terabox.com/s/1ajrXHvKeZcGcvrdATyzF5w",
+                details: `
+                    <h4>Flash Instructions</h4>
+                    <p>Reboot To Recovery -> Flash .Zip file -> Flash Permissiver GKI -> Format data -> Reboot System.</p>
+                    <h4>Changelogs</h4>
+                    <ul>
+                        <li>Added Trancam, Fix delay power button.</li>
+                        <li>Fix brightness, Dolby, Vibration, Torch, Dt2w.</li>
+                        <li>Kustom swappiness, Set Governor schedutil.</li>
+                    </ul>
+                    <h4>Bugs & Issues</h4>
+                    <ul>
+                        <li>Face Unlock, PrivApp, HideApp, Fingerprint.</li>
+                    </ul>
+                `
+            },
+            {
+                id: "speedox", name: "SPEEDOX UI A15", badge: "b-xiaomi", badgeText: "HyperOS", dev: "Dianfiit", base: "HyperOS Mod",
+                link: "https://pixeldrain.com/u/WXed4FTq",
+                details: `
+                    <h4>Flash Instructions</h4>
+                    <p>Reboot recovery -> Extract .7z File -> flash super.img -> format data -> reboot system.</p>
+                    <h4>Changelogs & Bugs</h4>
+                    <ul>
+                        <li>Use No Setup Wizard. Flash Camera manual.</li>
+                        <li><strong>Bug:</strong> FOD.</li>
+                    </ul>
+                `
+            },
+            {
+                id: "mistos", name: "MistOS v4.4 Zephyr", badge: "b-aosp", badgeText: "AOSP", dev: "DevGaa", base: "A16",
+                link: "https://drive.usercontent.google.com/download?id=1_kDpXAcakGjfwRQaHwSZIAQM9KrtwEZw&export=download",
+                details: `
+                    <h4>Bugs</h4>
+                    <ul>
+                        <li>NFC.</li>
+                        <li>Mono Speaker.</li>
+                    </ul>
+                `
+            },
+            {
+                id: "lumine", name: "LumineDroid A16", badge: "b-aosp", badgeText: "AOSP", dev: "DevGaa", base: "A16",
+                link: "https://pixeldrain.com/u/XR7tPAzK",
+                details: `
+                    <h4>Flash Instructions</h4>
+                    <p>Extract .zip file -> reboot recovery -> flash super.img -> format data -> reboot system.</p>
+                    <h4>Bugs</h4>
+                    <ul>
+                        <li>FOD (Fingerprint on Display).</li>
+                    </ul>
+                `
+            },
+            {
+                id: "ofox", name: "OrangeFox Recovery", badge: "b-recovery", badgeText: "Recovery", dev: "jvaswb", base: "Custom Recovery",
+                link: "https://t.me/japaspanas/9?single",
+                details: `
+                    <h4>Flash Instructions</h4>
+                    <ol>
+                        <li>Reboot To Fastboot.</li>
+                        <li>Pastikan terdeteksi (<code>fastboot devices</code>).</li>
+                        <li>Ketik: <code>fastboot flash vendor_boot (.img file)</code></li>
+                        <li>Reboot manualy to recovery.</li>
+                    </ol>
+                `
+            }
+        ];
+
+        // --- 2. RENDER ROM CARDS ---
+        const romContainer = document.getElementById('romContainer');
+        
+        function renderROMs() {
+            romDatabase.forEach(rom => {
+                const isLinkHash = rom.link === "#";
+                const downloadBtnHTML = isLinkHash 
+                    ? `<button class="btn-glass btn-primary" onclick="openModal('${rom.id}')">GET LINKS & INFO</button>`
+                    : `<a href="${rom.link}" target="_blank" class="btn-glass" onclick="triggerHaptic(50)">DOWNLOAD</a>
+                       <button class="btn-glass btn-primary" onclick="openModal('${rom.id}')">DETAILS & GUIDE</button>`;
+
+                const cardHTML = `
+                    <div class="glass-card">
+                        <div class="badge ${rom.badge}">${rom.badgeText}</div>
+                        <h3 style="margin-top: 0; font-size: 24px; font-weight: 800;">${rom.name}</h3>
+                        <div style="font-size: 14px; color: var(--text-sub); margin-bottom: 20px; line-height: 1.6;">
+                            <strong>Base:</strong> ${rom.base}<br>
+                            <strong>Porter/Dev:</strong> <span style="color: #fff;">${rom.dev}</span>
+                        </div>
+                        <div class="btn-group">
+                            ${downloadBtnHTML}
+                        </div>
+                    </div>
+                `;
+                romContainer.innerHTML += cardHTML;
+            });
+        }
+
+        // --- 3. MODAL LOGIC ---
+        const modalOverlay = document.getElementById('romModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+
+        function openModal(id) {
+            triggerHaptic(60);
+            const rom = romDatabase.find(r => r.id === id);
+            if(rom) {
+                modalTitle.innerText = rom.name;
+                modalBody.innerHTML = rom.details;
+                modalOverlay.classList.add('active');
+            }
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+        }
+
+        // Close on outside click
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) closeModal();
+        });
+
+
+        // --- 4. ENGINE LOGIC (TAB, HAPTIC, AUTO-FIX, MESH, FPS) ---
+
+        function triggerHaptic(duration = 40) {
+            if (navigator.vibrate) { navigator.vibrate(duration); }
+        }
+
+        document.querySelectorAll('.dock-item').forEach(el => {
+            el.addEventListener('click', () => triggerHaptic(50));
+        });
+
+        window.onerror = function(message) {
+            console.warn("[ASNF Engine 15 Core] Auto-Fix Intercepted:", message);
+            return true; 
+        };
+
+        function switchMenu(menuId, element) {
+            document.querySelectorAll('.tab-section').forEach(tab => {
+                tab.classList.remove('active');
+                setTimeout(() => { if(!tab.classList.contains('active')) tab.style.display = 'none'; }, 500); 
+            });
+            document.querySelectorAll('.dock-item').forEach(item => { item.classList.remove('active'); });
+
+            const targetTab = document.getElementById('menu-' + menuId);
+            targetTab.style.display = 'block';
+            void targetTab.offsetWidth; // Force Reflow
+            targetTab.classList.add('active');
+            
+            element.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        const meshBg = document.getElementById('meshBg');
+        let targetX = 0, targetY = 0;
+        let currentX = 0, currentY = 0;
+        const lerpFactor = 0.05;
+
+        function updateParallax() {
+            if(window.innerWidth > 800) {
+                currentX += (targetX - currentX) * lerpFactor;
+                currentY += (targetY - currentY) * lerpFactor;
+                meshBg.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) scale(1.05)`;
+            }
+            requestAnimationFrame(updateParallax);
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            targetX = (e.clientX / window.innerWidth - 0.5) * 30; 
+            targetY = (e.clientY / window.innerHeight - 0.5) * 30;
+        });
+
+        window.addEventListener('mouseleave', () => { targetX = 0; targetY = 0; });
+        requestAnimationFrame(updateParallax);
+
+        window.addEventListener('load', () => {
+            renderROMs(); // Render data on load
+            const loader = document.getElementById('loading-screen');
+            setTimeout(() => {
+                loader.style.opacity = '0';
+                setTimeout(() => {
+                    loader.style.visibility = 'hidden';
+                    loader.style.display = 'none';
+                }, 1200); 
+            }, 3000); 
+        });
+
+    </script>
+</body>
+</html>
